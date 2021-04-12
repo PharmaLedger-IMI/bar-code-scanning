@@ -1,0 +1,68 @@
+<html>
+<head>
+  <!-- <script type="module" src="/node_modules/scandit-sdk/build/browser/index.esm.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/scandit-sdk@5.x"></script>
+</head>
+
+<body>
+
+  <div id="scandit-barcode-picker" style="max-width: 1280px; max-height: 80%;"></div>
+<script>
+compositeOngoing = false
+compositeMap = {}
+compositeMap[4] = "databar-limited"
+compositeMap[2] = "micropdf417"
+
+const createNewBarcodePicker = (symbologiesArr = ["databar", "databar-expanded", "databar-limited", "micropdf417", "data-matrix"]) => {
+  return ScanditSDK.BarcodePicker.create(document.getElementById("scandit-barcode-picker"), {
+    // enable some common symbologies
+    scanSettings: new ScanditSDK.ScanSettings({ enabledSymbologies: symbologiesArr }),
+  })
+}
+
+const newBarcodePickerCallback = (barcodePicker) => {
+  // barcodePicker is ready here, show a message every time a barcode is scanned
+  barcodePicker.on("scan", (scanResult) => {
+    let firstRes = scanResult.barcodes[0];
+    let compositeFlagValue = firstRes.compositeFlag
+    
+    if (compositeFlagValue > 1) {
+      if (!compositeOngoing) {
+        // start the composite scan process
+        compositeOngoing = {
+          ongoing: true,
+          lookingFor: compositeMap[compositeFlagValue]
+        }
+        compositeOngoing[firstRes.symbology] = firstRes.data
+
+        // init with looking for
+        barcodePicker.destroy()
+        createNewBarcodePicker([compositeMap[compositeFlagValue]]).then(newBarcodePickerCallback)
+        
+      }
+      else {
+        // finish the composite scan process
+        if (firstRes.symbology === compositeOngoing.lookingFor) {
+          compositeOngoing[firstRes.symbology] = firstRes.data
+          console.log('Composite Code scaned')
+          console.log(compositeOngoing)
+          // return the data & reinit
+          compositeOngoing = false
+          barcodePicker.destroy()
+          createNewBarcodePicker().then(newBarcodePickerCallback)
+        }
+      }
+    }
+  });
+}
+
+ScanditSDK.configure("__scandit-license-key-web__", {
+  engineLocation: "https://cdn.jsdelivr.net/npm/scandit-sdk@5.x/build/",
+})
+.then(() => {
+  return createNewBarcodePicker()
+})
+.then(newBarcodePickerCallback);
+</script>
+</body>
+</html>
