@@ -13,10 +13,14 @@ compositeMap = {}
 compositeMap[4] = "databar-limited"
 compositeMap[2] = "micropdf417"
 
+const defaultScanSettings = {
+  enabledSymbologies: ["databar", "databar-expanded", "databar-limited", "micropdf417", "data-matrix"]
+}
+
 const createNewBarcodePicker = (symbologiesArr = ["databar", "databar-expanded", "databar-limited", "micropdf417", "data-matrix"]) => {
   return ScanditSDK.BarcodePicker.create(document.getElementById("scandit-barcode-picker"), {
     // enable some common symbologies
-    scanSettings: new ScanditSDK.ScanSettings({ enabledSymbologies: symbologiesArr }),
+    scanSettings: new ScanditSDK.ScanSettings(defaultScanSettings),
   })
 }
 
@@ -25,9 +29,9 @@ const newBarcodePickerCallback = (barcodePicker) => {
   barcodePicker.on("scan", (scanResult) => {
     let firstRes = scanResult.barcodes[0];
     let compositeFlagValue = firstRes.compositeFlag
-    
     if (compositeFlagValue > 1) {
       if (!compositeOngoing) {
+        console.log('init composite');
         // start the composite scan process
         compositeOngoing = {
           ongoing: true,
@@ -36,9 +40,7 @@ const newBarcodePickerCallback = (barcodePicker) => {
         compositeOngoing[firstRes.symbology] = firstRes.data
 
         // init with looking for
-        barcodePicker.destroy()
-        createNewBarcodePicker([compositeMap[compositeFlagValue]]).then(newBarcodePickerCallback)
-        
+        barcodePicker.applyScanSettings(new ScanditSDK.ScanSettings({enabledSymbologies: [compositeMap[compositeFlagValue]] }));
       }
       else {
         // finish the composite scan process
@@ -46,10 +48,8 @@ const newBarcodePickerCallback = (barcodePicker) => {
           compositeOngoing[firstRes.symbology] = firstRes.data
           console.log('Composite Code scaned')
           console.log(compositeOngoing)
-          // return the data & reinit
           compositeOngoing = false
-          barcodePicker.destroy()
-          createNewBarcodePicker().then(newBarcodePickerCallback)
+          barcodePicker.applyScanSettings(new ScanditSDK.ScanSettings(defaultScanSettings))
         }
       }
     }
