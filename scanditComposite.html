@@ -14,7 +14,8 @@ compositeMap[4] = "databar-limited"
 compositeMap[2] = "micropdf417"
 
 const defaultScanSettings = {
-  enabledSymbologies: ["databar", "databar-expanded", "databar-limited", "micropdf417", "data-matrix"]
+  enabledSymbologies: ["databar-limited", "micropdf417"],
+  maxNumberOfCodesPerFrame: 2
 }
 
 const createNewBarcodePicker = (symbologiesArr = ["databar", "databar-expanded", "databar-limited", "micropdf417", "data-matrix"]) => {
@@ -27,36 +28,14 @@ const createNewBarcodePicker = (symbologiesArr = ["databar", "databar-expanded",
 const newBarcodePickerCallback = (barcodePicker) => {
   // barcodePicker is ready here, show a message every time a barcode is scanned
   barcodePicker.on("scan", (scanResult) => {
-    let firstRes = scanResult.barcodes[0];
-    let compositeFlagValue = firstRes.compositeFlag
-    if (compositeFlagValue > 1) {
-      if (!compositeOngoing) {
-        console.log('init composite');
-        // start the composite scan process
-        compositeOngoing = {
-          ongoing: true,
-          lookingFor: compositeMap[compositeFlagValue]
-        }
-        compositeOngoing[firstRes.symbology] = firstRes.data
-
-        // init with looking for
-        barcodePicker.applyScanSettings(new ScanditSDK.ScanSettings({enabledSymbologies: [compositeMap[compositeFlagValue]] }));
-      }
-      else {
-        // finish the composite scan process
-        if (firstRes.symbology === compositeOngoing.lookingFor) {
-          compositeOngoing[firstRes.symbology] = firstRes.data
-          console.log('Composite Code scaned')
-          console.log(compositeOngoing)
-          compositeOngoing = false
-          barcodePicker.applyScanSettings(new ScanditSDK.ScanSettings(defaultScanSettings))
-        }
-      }
+    console.log(scanResult)
+    if (scanResult.barcodes.length === 2) {
+      alert('Composite code scan successfull.')
     }
   });
 }
 
-ScanditSDK.configure("__scandit-license-key-web__", {
+ScanditSDK.configure("api-key", {
   engineLocation: "https://cdn.jsdelivr.net/npm/scandit-sdk@5.x/build/",
 })
 .then(() => {
