@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@zxing/library": "^0.18.4",
+    "@zxing/library": "^0.19.1",
     "scandit-sdk": "^5.6.0"
   },
   "devDependencies": {
